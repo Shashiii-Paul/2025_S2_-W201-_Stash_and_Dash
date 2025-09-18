@@ -1349,12 +1349,25 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: a815b1a30fdfe81408b1c832847c1eb2, type: 3}
       propertyPath: m_Name
-      value: Eve By J.Gonzales
+      value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: a815b1a30fdfe81408b1c832847c1eb2, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: fe93fa62b6d2474438bcc1d478abc0c5, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a815b1a30fdfe81408b1c832847c1eb2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1525401573}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a815b1a30fdfe81408b1c832847c1eb2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1525401572}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a815b1a30fdfe81408b1c832847c1eb2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1525401571}
   m_SourcePrefab: {fileID: 100100000, guid: a815b1a30fdfe81408b1c832847c1eb2, type: 3}
 --- !u!1001 &872774475
 PrefabInstance:
@@ -1983,6 +1996,81 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 64e306e2db357174b943bc6313b84021, type: 3}
+--- !u!1 &1525401568 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: a815b1a30fdfe81408b1c832847c1eb2, type: 3}
+  m_PrefabInstance: {fileID: 857096246}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &1525401569 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: a815b1a30fdfe81408b1c832847c1eb2, type: 3}
+  m_PrefabInstance: {fileID: 857096246}
+  m_PrefabAsset: {fileID: 0}
+--- !u!54 &1525401571
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1525401568}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!114 &1525401572
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1525401568}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf744957631f2f04a85ca72a4a219dbc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerController
+  animator: {fileID: 1525401569}
+  moveSpeed: 10
+  rb: {fileID: 1525401571}
+--- !u!136 &1525401573
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1525401568}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5
+  m_Height: 1.5
+  m_Direction: 1
+  m_Center: {x: 0, y: 0.72, z: 0}
 --- !u!1001 &1562865294
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2788,7 +2876,7 @@ Animator:
   m_Controller: {fileID: 9100000, guid: fe93fa62b6d2474438bcc1d478abc0c5, type: 2}
   m_CullingMode: 1
   m_UpdateMode: 0
-  m_ApplyRootMotion: 0
+  m_ApplyRootMotion: 1
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
@@ -2806,7 +2894,7 @@ Transform:
   m_GameObject: {fileID: 521998847372664165}
   serializedVersion: 2
   m_LocalRotation: {x: -0.00086833944, y: -0.99451834, z: 0.008355795, w: -0.10422499}
-  m_LocalPosition: {x: 993.2622, y: 0.04880768, z: 612.3259}
+  m_LocalPosition: {x: 992.915, y: 0, z: 612.991}
   m_LocalScale: {x: 0.4, y: 0.4, z: 0.4}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -4454,9 +4542,9 @@ GameObject:
   m_Component:
   - component: {fileID: 521998847372165253}
   - component: {fileID: 521998847365279499}
-  - component: {fileID: 521998847372664168}
   - component: {fileID: 521998847372664167}
-  - component: {fileID: 521998847372664166}
+  - component: {fileID: 521998847372664169}
+  - component: {fileID: 521998847372664168}
   m_Layer: 0
   m_Name: Player_A
   m_TagString: Untagged
@@ -4464,21 +4552,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &521998847372664166
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 521998847372664165}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cf744957631f2f04a85ca72a4a219dbc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerController
-  animator: {fileID: 521998847365279499}
-  moveSpeed: 100
-  rb: {fileID: 521998847372664168}
 --- !u!136 &521998847372664167
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -4529,6 +4602,21 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &521998847372664169
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 521998847372664165}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf744957631f2f04a85ca72a4a219dbc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerController
+  animator: {fileID: 521998847365279499}
+  moveSpeed: 12
+  rb: {fileID: 521998847372664168}
 --- !u!1 &521998847372664177
 GameObject:
   m_ObjectHideFlags: 0
