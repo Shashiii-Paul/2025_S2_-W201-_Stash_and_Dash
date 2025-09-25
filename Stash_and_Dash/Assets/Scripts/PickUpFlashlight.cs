@@ -2,8 +2,8 @@ using UnityEngine;
 
 public class PickUpFlashlight : MonoBehaviour
 {
-    public GameObject FlashLightOnPlayer; // Child flashlight under Player > Head
-    public GameObject PickUpText; // UI Text for "Press E"
+    public GameObject FlashLightOnPlayer; 
+    public GameObject PickUpText; 
 
     void Start()
     {
@@ -15,16 +15,16 @@ public class PickUpFlashlight : MonoBehaviour
 
     private void OnTriggerStay(Collider other)
     {
-        if (other.CompareTag("Hunted")) // Changed from "Player" to "Hunted"
+        if (other.CompareTag("Hunted")) 
         {
             if (PickUpText != null)
                 PickUpText.SetActive(true);
 
-            if (Input.GetKeyDown(KeyCode.E)) // Changed to GetKeyDown for single press
+            if (Input.GetKeyDown(KeyCode.E)) 
             {
-                this.gameObject.SetActive(false); // Disable world flashlight
+                this.gameObject.SetActive(false); 
                 if (FlashLightOnPlayer != null)
-                    FlashLightOnPlayer.SetActive(true); // Enable player's flashlight
+                    FlashLightOnPlayer.SetActive(true); 
                 if (PickUpText != null)
                     PickUpText.SetActive(false);
             }
