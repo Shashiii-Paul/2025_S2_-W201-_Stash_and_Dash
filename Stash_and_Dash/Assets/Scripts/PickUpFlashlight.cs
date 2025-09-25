@@ -2,13 +2,10 @@ using UnityEngine;
 
 public class PickUpFlashlight : MonoBehaviour
 {
-    public GameObject FlashLightOnPlayer; 
     public GameObject PickUpText; 
 
     void Start()
     {
-        if (FlashLightOnPlayer != null)
-            FlashLightOnPlayer.SetActive(false);
         if (PickUpText != null)
             PickUpText.SetActive(false);
     }
@@ -22,11 +19,20 @@ public class PickUpFlashlight : MonoBehaviour
 
             if (Input.GetKeyDown(KeyCode.E)) 
             {
-                this.gameObject.SetActive(false); 
-                if (FlashLightOnPlayer != null)
-                    FlashLightOnPlayer.SetActive(true); 
-                if (PickUpText != null)
-                    PickUpText.SetActive(false);
+                
+                GameObject flashLightOnPlayer = other.gameObject.transform.Find("Flashlight (1)")?.gameObject;
+
+                if (flashLightOnPlayer != null)
+                {
+                    flashLightOnPlayer.SetActive(true); 
+                    this.gameObject.SetActive(false); 
+                    if (PickUpText != null)
+                        PickUpText.SetActive(false); 
+                }
+                else
+                {
+                    Debug.LogWarning("Flashlight not found on player: " + other.gameObject.name);
+                }
             }
         }
     }
