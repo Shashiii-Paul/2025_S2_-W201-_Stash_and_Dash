@@ -1,32 +1,41 @@
-using Fusion;
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
+using Fusion;
 
-public class PlayerDatabase : NetworkBehaviour
+public class PlayerDatabase : MonoBehaviour
 {
     public static PlayerDatabase Instance;
 
-    // Store all players
-    public static Dictionary<PlayerRef, string> Players = new Dictionary<PlayerRef, string>();
+    // Maps PlayerRef → username
+    private Dictionary<PlayerRef, string> players = new();
 
-    public override void Spawned()
+    private void Awake()
     {
-        // Only one instance on the server
-        if (Runner.IsServer)
-        {
+        if (Instance == null)
             Instance = this;
-            Debug.Log("PlayerDatabase is ready");
+        else
+            Destroy(gameObject);
+
+        DontDestroyOnLoad(gameObject);
+    }
+
+    public void AddPlayer(PlayerRef playerRef, string username)
+    {
+        if (!players.ContainsKey(playerRef))
+        {
+            players.Add(playerRef, username);
+            Debug.Log($"Player added: {username} [{playerRef}]");
+        }
+        else
+        {
+            Debug.LogWarning($"PlayerRef {playerRef} already has a username!");
         }
     }
 
-    // RPC called by clients, received by server
-    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
-    public void RPC_AddPlayer(string username, RpcInfo info = default)
+    public string GetUsername(PlayerRef playerRef)
     {
-        if (!Players.ContainsKey(info.Source))
-        {
-            Players.Add(info.Source, username);
-            Debug.Log($"Player added: {username} ({info.Source})");
-        }
+        if (players.TryGetValue(playerRef, out string username))
+            return username;
+        return "Unknown";
     }
 }

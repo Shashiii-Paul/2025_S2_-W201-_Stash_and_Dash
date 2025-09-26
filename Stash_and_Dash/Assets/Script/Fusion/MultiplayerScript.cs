@@ -1,61 +1,64 @@
 using UnityEngine;
 using UnityEngine.UI;
 using Fusion;
-
 public class MultiplayerScript : NetworkBehaviour
 {
-    public Text messages;   // The text box displaying chat
-    public InputField input; // The input field for typing
-    public string username = "default";
+    public Text messages;   // UI text for chat
+    public InputField input;
 
-    // Queue for message if NetworkBehaviour not ready
     private string queuedMessage = null;
 
-    // Called by UI button
-    public void CallMessagedRPC()
-    {
-        string message = input.text;
-        if (string.IsNullOrEmpty(message))
-            return;
+    private NetworkRunner MyRunner => NetworkRunnerManager.Instance.runner;
+    private PlayerRef localPlayer => MyRunner.LocalPlayer;
 
-        // If NetworkBehaviour isn't ready, queue the message
-        if (Runner == null || !Object.HasStateAuthority)
+    // Optional: queue message before object is fully initialized
+    public override void Spawned()
+    {
+        base.Spawned();
+
+        if (!string.IsNullOrEmpty(queuedMessage))
+        {
+            SendChat(queuedMessage);
+            queuedMessage = null;
+        }
+    }
+
+    public void CallMessageRPC()
+    {
+        string message = input.text.Trim();
+        if (string.IsNullOrEmpty(message)) return;
+
+        if (Runner == null || localPlayer == default)
         {
             queuedMessage = message;
-            Debug.Log("Network not ready yet, message queued.");
             input.text = "";
             return;
         }
 
-        // Otherwise, send immediately
-        RPC_SendMessage(username, message);
+        SendChat(message);
         input.text = "";
     }
 
-    // This is called on all clients
+    private void SendChat(string message)
+    {
+        if (PlayerDatabase.Instance == null)
+        {
+            Debug.LogWarning("PlayerDatabase missing!");
+            return;
+        }
+
+        string username = PlayerDatabase.Instance.GetUsername(localPlayer);
+        if (string.IsNullOrEmpty(username)) username = "Unknown";
+
+        RPC_SendMessage(username, message);
+    }
+
     [Rpc(RpcSources.All, RpcTargets.All)]
     public void RPC_SendMessage(string username, string message, RpcInfo info = default)
     {
         if (messages != null)
         {
             messages.text += $"{username}: {message}\n";
-        }
-        else
-        {
-            Debug.LogWarning("Messages Text reference is missing!");
-        }
-    }
-
-    // Called automatically when this NetworkBehaviour is spawned
-    public override void Spawned()
-    {
-        base.Spawned();
-
-        // If there’s a queued message, send it now
-        if (!string.IsNullOrEmpty(queuedMessage))
-        {
-            RPC_SendMessage(username, queuedMessage);
-            queuedMessage = null;
         }
     }
 }
