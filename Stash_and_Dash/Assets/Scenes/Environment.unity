@@ -3046,7 +3046,7 @@ MonoBehaviour:
   moveSpeed: 5
   rb: {fileID: 1046975534}
   cameraTransform: {fileID: 738706971}
-  mouseSensitivity: 200
+  mouseSensitivity: 400
 --- !u!136 &1046975536
 CapsuleCollider:
   m_ObjectHideFlags: 0

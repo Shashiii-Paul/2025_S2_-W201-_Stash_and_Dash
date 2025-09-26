@@ -30,6 +30,6 @@ public class UsernameUI : MonoBehaviour
         PlayerDatabase.Instance.AddPlayer(localPlayer, usernameInput.text);
 
         // Load Chat Scene
-        SceneManager.LoadScene("chatFusionScene");
+        SceneManager.LoadScene("Lobby");
     }
 }
