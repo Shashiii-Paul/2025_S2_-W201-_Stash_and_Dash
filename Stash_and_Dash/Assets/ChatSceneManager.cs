@@ -6,8 +6,10 @@ public class ChatUI : MonoBehaviour
 {
     public static ChatUI Instance;
 
-    public Text messages;      // Assign in Inspector
-    public InputField input;   // Assign in Inspector
+    [Header("UI References")]
+    public Text messages;           // Assign in Inspector
+    public InputField input;        // Assign in Inspector
+    public ScrollRect scrollRect;   // Assign ScrollRect that contains the messages Text
 
     private bool chatFocused = false;
 
@@ -35,11 +37,8 @@ public class ChatUI : MonoBehaviour
         // Click outside InputField to lose focus
         if (chatFocused && Input.GetMouseButtonDown(0))
         {
-            // If pointer is not over InputField, unfocus
             if (!IsPointerOverUIObject(input.gameObject))
-            {
                 UnfocusChat();
-            }
         }
     }
 
@@ -73,7 +72,14 @@ public class ChatUI : MonoBehaviour
     public void DisplayMessage(string username, string message)
     {
         if (messages != null)
+        {
             messages.text += $"{username}: {message}\n";
+
+            // Scroll to bottom
+            Canvas.ForceUpdateCanvases();
+            scrollRect.verticalNormalizedPosition = 0f;
+            Canvas.ForceUpdateCanvases();
+        }
     }
 
     // Checks if pointer is over the given UI object
