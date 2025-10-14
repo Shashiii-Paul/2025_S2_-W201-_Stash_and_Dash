@@ -76,7 +76,7 @@ Camera:
     m_Bits: 4294967295
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
-  m_TargetDisplay: 4
+  m_TargetDisplay: 0
   m_TargetEye: 3
   m_HDR: 1
   m_AllowMSAA: 1
@@ -469,6 +469,7 @@ MonoBehaviour:
   Flags: 262145
   NestedObjects: []
   NetworkedBehaviours:
+  - {fileID: 1877514882303656325}
   - {fileID: -3898928978741345210}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &-3898928978741345210
