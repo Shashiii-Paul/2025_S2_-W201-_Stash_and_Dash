@@ -20,8 +20,8 @@ public class UsernameUI : MonoBehaviour
             return;
         }
 
-        // Store username locally 
-        PlayerPrefs.SetString("Username", usernameInput.text);  // Save to local storage
+        // Store username locally for now
+        PlayerPrefs.SetString("Username", usernameInput.text);
 
         // Hide username input
         usernameInput.gameObject.SetActive(false);
@@ -53,13 +53,13 @@ public class UsernameUI : MonoBehaviour
         {
             GameMode = mode,
             SessionName = sessionName,
-            SceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>()  
+            SceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>()
         };
 
         await networkRunner.StartGame(args);
 
-        // Load lobby after starting network
-        SceneManager.LoadScene("Lobby");
+        // Load Environment scene after starting network
+        SceneManager.LoadScene("Environment");
 
         // Hide buttons
         if (hostButton != null) hostButton.gameObject.SetActive(false);
