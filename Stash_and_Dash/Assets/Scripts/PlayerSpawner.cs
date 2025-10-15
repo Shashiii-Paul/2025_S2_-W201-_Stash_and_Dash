@@ -4,7 +4,8 @@ using UnityEngine.SceneManagement; // Add this line
 
 public class PlayerSpawner : MonoBehaviour
 {
-    public NetworkPrefabRef playerPrefab;  // Drag PlayerPrefab here
+    public NetworkPrefabRef addictPrefab;  // Drag Hunted prefab here
+    public NetworkPrefabRef cartelPrefab;  // Drag new Cartel prefab (create if none)
 
     private void Start()
     {
@@ -21,21 +22,24 @@ public class PlayerSpawner : MonoBehaviour
             return;
         }
 
-        if (playerPrefab == null)
-        {
-            Debug.LogError("PlayerSpawner: PlayerPrefab is not assigned in the Inspector!");
-            return;
-        }
-
         if (SceneManager.GetActiveScene().name != "Environment")
         {
             Debug.LogWarning("PlayerSpawner: Not in Environment scene, skipping spawn.");
             return;
         }
 
+        // Select prefab based on role (added)
+        string role = PlayerPrefs.GetString("Role", "Addict");
+        NetworkPrefabRef selectedPrefab = (role == "Cartel") ? cartelPrefab : addictPrefab;
+        if (selectedPrefab == null) 
+        { 
+            Debug.LogError("No prefab for role: " + role); 
+            return; 
+        }
+
         Vector3 spawnPos = new Vector3(991, 0, 599);  // Warehouse coordinates
         Quaternion spawnRot = Quaternion.identity;     // Default rotation
-        runner.Spawn(playerPrefab, spawnPos, spawnRot, runner.LocalPlayer);
+        runner.Spawn(selectedPrefab, spawnPos, spawnRot, runner.LocalPlayer);
         Debug.Log("Spawned player at warehouse position: " + spawnPos);
     }
 }

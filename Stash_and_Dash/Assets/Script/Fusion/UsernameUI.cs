@@ -3,11 +3,11 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using Fusion;
 using TMPro;
+using System.Threading.Tasks;
 
 public class UsernameUI : MonoBehaviour
 {
     public TMP_InputField usernameInput;
-    public NetworkRunner networkRunner;
     public Button hostButton;
     public Button joinButton;
     public TMP_InputField sessionInput;
@@ -49,17 +49,12 @@ public class UsernameUI : MonoBehaviour
             sessionName = sessionInput.text;
         }
 
-        var args = new StartGameArgs()
-        {
-            GameMode = mode,
-            SessionName = sessionName,
-            SceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>()
-        };
+        NetworkRunnerManager.Instance.StartRunner(mode, sessionName);
+        // Wait a bit for runner to start (hacky, improve with callbacks later)
+        await Task.Delay(1000);
 
-        await networkRunner.StartGame(args);
-
-        // Load Environment scene after starting network
-        SceneManager.LoadScene("Environment");
+        // Load Lobby scene after starting network
+        SceneManager.LoadScene("Lobby");
 
         // Hide buttons
         if (hostButton != null) hostButton.gameObject.SetActive(false);

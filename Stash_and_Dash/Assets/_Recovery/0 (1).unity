@@ -388,57 +388,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 235848093}
   m_CullTransparentMesh: 1
---- !u!1 &358893964
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 358893966}
-  - component: {fileID: 358893965}
-  m_Layer: 0
-  m_Name: NetworkManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &358893965
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 358893964}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e879a30a5536d934594546647a7aaef6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NetworkRunnerManager
-  runner: {fileID: 7667844747690369354, guid: 69d7aff5b667def4295732ba35cdcb3a, type: 3}
-  playerPrefab:
-    RawGuidValue: 00000000000000000000000000000000
-  playerDatabasePrefab:
-    RawGuidValue: 00000000000000000000000000000000
-  chatNetworkPrefab:
-    RawGuidValue: 00000000000000000000000000000000
---- !u!4 &358893966
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 358893964}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 997.0322, y: 0.866, z: 610.71545}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &372062223
 GameObject:
   m_ObjectHideFlags: 0
@@ -901,7 +850,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UsernameUI
   usernameInput: {fileID: 1723120918}
-  networkRunner: {fileID: 1033040199}
   hostButton: {fileID: 685019589}
   joinButton: {fileID: 221771819}
   sessionInput: {fileID: 0}
@@ -1095,13 +1043,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e879a30a5536d934594546647a7aaef6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  runner: {fileID: 1033040199}
-  playerPrefab:
-    RawGuidValue: 00000000000000000000000000000000
-  playerDatabasePrefab:
-    RawGuidValue: 414a3d2c5fa10b34795394aa431d24c9
-  chatNetworkPrefab:
-    RawGuidValue: f112c1e3ef0cffd449d985c70cb6a2c0
+  runnerPrefab: {fileID: 0}
 --- !u!1 &1231833830
 GameObject:
   m_ObjectHideFlags: 0
@@ -2276,4 +2218,3 @@ SceneRoots:
   - {fileID: 625092170}
   - {fileID: 1033040198}
   - {fileID: 4174630889073142557}
-  - {fileID: 358893966}

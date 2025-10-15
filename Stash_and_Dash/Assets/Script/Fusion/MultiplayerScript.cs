@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using Fusion;
+
 public class MultiplayerScript : NetworkBehaviour
 {
     public Text messages;   // UI text for chat
@@ -8,7 +9,7 @@ public class MultiplayerScript : NetworkBehaviour
 
     private string queuedMessage = null;
 
-    private NetworkRunner MyRunner => NetworkRunnerManager.Instance.runner;
+    private NetworkRunner MyRunner => NetworkRunnerManager.Instance.Runner;
     private PlayerRef localPlayer => MyRunner.LocalPlayer;
 
     // Optional: queue message before object is fully initialized

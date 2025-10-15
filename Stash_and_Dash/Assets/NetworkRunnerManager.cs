@@ -1,53 +1,55 @@
-using Fusion;
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using Fusion;
 using System.Threading.Tasks;
 
 public class NetworkRunnerManager : MonoBehaviour
 {
     public static NetworkRunnerManager Instance;
+    public NetworkRunner runnerPrefab;  // Drag a NetworkRunner prefab here
 
-    public NetworkRunner runner;
-    public NetworkPrefabRef playerPrefab;
-    public NetworkPrefabRef playerDatabasePrefab;
-    public NetworkPrefabRef chatNetworkPrefab; // Add this in inspector
+    public NetworkRunner Runner { get; private set; }
 
-    private async void Awake()
+    private void Awake()
     {
         if (Instance == null)
-        {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
         else
-        {
             Destroy(gameObject);
-            return;
-        }
 
-        if (runner == null)
-            runner = GetComponent<NetworkRunner>();
-
-        // Start as Host
-        await runner.StartGame(new StartGameArgs
-        {
-            GameMode = GameMode.Host,
-            SessionName = "TestSession",
-            Scene = SceneRef.FromIndex(SceneManager.GetActiveScene().buildIndex)
-        });
-
-        // Spawn PlayerDatabase once
-        if (runner.IsServer && playerDatabasePrefab.IsValid && PlayerDatabase.Instance == null)
-            runner.Spawn(playerDatabasePrefab, Vector3.zero, Quaternion.identity, null);
-
-        // Spawn local player
-        if (playerPrefab.IsValid)
-            runner.Spawn(playerPrefab, Vector3.zero, Quaternion.identity, runner.LocalPlayer);
-
-        // Spawn ChatNetwork once
-        if (runner.IsServer && chatNetworkPrefab.IsValid && ChatNetwork.Instance == null)
-            runner.Spawn(chatNetworkPrefab, Vector3.zero, Quaternion.identity, null);
-
-        Debug.Log("[NetworkRunnerManager] Setup complete.");
+        DontDestroyOnLoad(gameObject);
     }
+
+    public async void StartRunner(GameMode mode, string sessionName)
+{
+    // If runner exists and running, shut it down
+    if (Runner != null && Runner.IsRunning)
+    {
+        await Runner.Shutdown();
+        Destroy(Runner.gameObject);
+    }
+
+    // Create new runner
+    Runner = Instantiate(runnerPrefab);
+    DontDestroyOnLoad(Runner.gameObject);
+
+    var args = new StartGameArgs()
+    {
+        GameMode = mode,
+        SessionName = sessionName,
+        SceneManager = Runner.gameObject.AddComponent<NetworkSceneManagerDefault>()
+    };
+
+    var result = await Runner.StartGame(args);
+    if (result.Ok)
+    {
+        Debug.Log("Runner started successfully.");
+        // Add username early for Lobby chat
+        string username = PlayerPrefs.GetString("Username", "Unknown");
+        PlayerDatabase.Instance.AddPlayer(Runner.LocalPlayer, username);
+    }
+    else
+    {
+        Debug.LogError("Failed to start runner. Shutdown Reason: " + result.ShutdownReason);
+    }
+}
 }

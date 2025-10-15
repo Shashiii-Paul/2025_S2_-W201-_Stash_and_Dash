@@ -51,22 +51,9 @@ public class PlayerController : NetworkBehaviour
 
     void Update()
     {
-        if (!Object.HasInputAuthority || (EventSystem.current != null && EventSystem.current.currentSelectedGameObject != null))
-            return;
+        if (!Object.HasInputAuthority) return;
 
-        // Handle mouse input for camera rotation
-        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
-        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
-
-        yRotation += mouseX; // Yaw (horizontal)
-        xRotation -= mouseY; // Pitch (vertical)
-        xRotation = Mathf.Clamp(xRotation, -90f, 90f); // Limit vertical look
-
-        // Apply rotations
-        transform.rotation = Quaternion.Euler(0f, yRotation, 0f); // Rotate body horizontally
-        cameraTransform.localRotation = Quaternion.Euler(xRotation, 0f, 0f); // Rotate camera vertically
-
-        // Handle movement input
+        // Handle movement input in Update for responsiveness
         float h = Input.GetAxisRaw("Horizontal");
         float v = Input.GetAxisRaw("Vertical");
         _moveInput = new Vector3(h, 0f, v).normalized;
@@ -74,13 +61,26 @@ public class PlayerController : NetworkBehaviour
 
     private void FixedUpdate()
     {
-        if (!Object.HasInputAuthority) return;
+        if (!Object.HasInputAuthority || EventSystem.current == null || (EventSystem.current != null && EventSystem.current.currentSelectedGameObject != null))
+            return;
 
-        // Move the player using Rigidbody
+        // Handle mouse input for camera rotation
+        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.fixedDeltaTime;
+        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.fixedDeltaTime;
+
+        yRotation += mouseX; // Yaw (horizontal)
+        xRotation -= mouseY; // Pitch (vertical)
+        xRotation = Mathf.Clamp(xRotation, -90f, 90f); // Limit vertical look
+
+        // Apply rotations via Rigidbody
+        Quaternion bodyRotation = Quaternion.Euler(0f, yRotation, 0f);
+        rb.MoveRotation(bodyRotation);
+        cameraTransform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+
+        // Move the player using AddForce for smoother physics (set isKinematic=false in prefab)
         Vector3 moveDirection = (transform.forward * _moveInput.z + transform.right * _moveInput.x).normalized;
-        Vector3 moveVelocity = moveDirection * moveSpeed;
-        Vector3 newPosition = rb.position + moveVelocity * Time.fixedDeltaTime;
-        rb.MovePosition(newPosition);
+        Vector3 moveVelocity = moveDirection * moveSpeed * 10; // Boost for feel
+        rb.AddForce(moveVelocity, ForceMode.VelocityChange);
 
         // Update animator if present
         if (animator != null)
