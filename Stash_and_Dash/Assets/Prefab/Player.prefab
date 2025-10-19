@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 8310545642417008678}
   - component: {fileID: 345829695586534089}
   - component: {fileID: 5358730576281267964}
+  - component: {fileID: 2847233466038943867}
   - component: {fileID: 6880275241482343692}
   - component: {fileID: 5176005084462377019}
   m_Layer: 6
@@ -83,6 +84,22 @@ MonoBehaviour:
   lookXLimit: 45
   canMove: 1
   cameraYOffset: 0.4
+--- !u!114 &2847233466038943867
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 18504644962544071}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ebb7ee7e3c6d434bbe2719ec5baa0d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CubeSpawner
+  indexToSpawn: 0
+  spawnLayer:
+    serializedVersion: 2
+    m_Bits: 256
 --- !u!114 &6880275241482343692
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -345,7 +362,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6190046913792934237}
   m_LocalRotation: {x: 0, y: -0.7399599, z: 0, w: 0.67265105}
-  m_LocalPosition: {x: 0, y: 0, z: 0.19}
+  m_LocalPosition: {x: 0, y: 0, z: 0.363}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -353,7 +370,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: -95.456, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.03, y: -0.84}
+  m_AnchoredPosition: {x: -0.046, y: -0.98}
   m_SizeDelta: {x: 1, y: 5}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!23 &978848505071248846
@@ -454,8 +471,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 5
-  m_fontSizeBase: 5
+  m_fontSize: 3
+  m_fontSizeBase: 3
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
