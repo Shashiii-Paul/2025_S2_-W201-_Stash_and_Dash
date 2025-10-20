@@ -144,23 +144,32 @@ namespace Alteruna
 			}
 		}
 
-		public bool JoinRoom(string roomName, ushort password = 0)
-		{
-			roomName = roomName.ToLower();
-			if (Multiplayer != null && Multiplayer.IsConnected)
-			{
-				foreach (var room in Multiplayer.AvailableRooms)
-				{
-					if (room.Name.ToLower() == roomName)
-					{
-						room.Join(password);
-						return true;
-					}
-				}
-			}
-
-			return false;
-		}
+public bool JoinRoom(string roomName, ushort password = 0)
+{
+    roomName = roomName.ToLower();
+    if (Multiplayer != null && Multiplayer.IsConnected)
+    {
+        foreach (var room in Multiplayer.AvailableRooms)
+        {
+            if (room.Name.ToLower() == roomName)
+            {
+                // Check if Hunter slot is taken
+                if (room.GetUserCount() > 0 && Multiplayer.Me.Index != 0)
+                {
+                    Debug.Log("Cannot join: Hunter slot already taken.");
+                    if (TitleText != null)
+                    {
+                        TitleText.text = "Cannot join: Hunter slot taken";
+                    }
+                    return false;
+                }
+                room.Join(password);
+                return true;
+            }
+        }
+    }
+    return false;
+}
 
 		private void Connected(Multiplayer multiplayer, Endpoint endpoint)
 		{

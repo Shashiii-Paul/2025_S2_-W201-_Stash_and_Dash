@@ -766,6 +766,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1d86d9d4a9c41c74ba34ff7c665d78d5, type: 3}
+--- !u!114 &501136717 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8761348924706829618, guid: b5237b32a25be3c4988b935302072ed9, type: 3}
+  m_PrefabInstance: {fileID: 650691204}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d199490a83bb2b844b9695cbf13b01ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &551015216
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1089,7 +1100,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8761348924893860122, guid: b5237b32a25be3c4988b935302072ed9, type: 3}
+      insertIndex: 1
+      addedObject: {fileID: 2075531233}
   m_SourcePrefab: {fileID: 100100000, guid: b5237b32a25be3c4988b935302072ed9, type: 3}
 --- !u!1001 &688035380
 PrefabInstance:
@@ -2412,6 +2426,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1978797289}
   - component: {fileID: 1978797288}
+  - component: {fileID: 1978797291}
   - component: {fileID: 1978797290}
   m_Layer: 0
   m_Name: NetworkManager
@@ -2451,7 +2466,7 @@ MonoBehaviour:
     Users: 
   _maxPlayers: 5
   AvatarSpawning: 1
-  AvatarPrefab: {fileID: 5176005084462377019, guid: 7cbbe8114293f674b955ef2c6d0cda60, type: 3}
+  AvatarPrefab: {fileID: 0}
   AvatarSpawnLocation: {fileID: 1038295380}
   SpawnAvatarPerIndex: 0
   AvatarSpawnLocations: []
@@ -2564,6 +2579,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Alteruna.Trinity.dll::Alteruna.Spawner
   Multiplayer: {fileID: 1978797288}
   SpawnableObjects:
+  - {fileID: 3983130379491327808, guid: ff5a8147ba1883145bf284236aa941f2, type: 3}
+  - {fileID: 18504644962544071, guid: 7cbbe8114293f674b955ef2c6d0cda60, type: 3}
   - {fileID: 8800926890597821062, guid: a0aa6c24dc7bbf24ba932bd67854711b, type: 3}
   OnObjectSpawn:
     m_PersistentCalls:
@@ -2572,6 +2589,23 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   ForceSync: 1
+--- !u!114 &1978797291
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1978797287}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a02ab04924a5e0e42afb7ba7b0d989e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerSpawner
+  hunterPrefab: {fileID: 3983130379491327808, guid: ff5a8147ba1883145bf284236aa941f2, type: 3}
+  huntedPrefab: {fileID: 18504644962544071, guid: 7cbbe8114293f674b955ef2c6d0cda60, type: 3}
+  spawnPoint: {fileID: 1038295380}
+  hunterIndex: 0
+  huntedIndex: 1
 --- !u!1001 &1996882276
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2778,6 +2812,24 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8d7783033df995f4f87d7cd4b44ddc3d, type: 3}
+--- !u!1 &2075531227 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8761348924893860122, guid: b5237b32a25be3c4988b935302072ed9, type: 3}
+  m_PrefabInstance: {fileID: 650691204}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2075531233
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2075531227}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28a27c9ea0ce69843af4fb2ea0809faf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChatAutoLock
+  chatInput: {fileID: 501136717}
 --- !u!1001 &2099535314
 PrefabInstance:
   m_ObjectHideFlags: 0
