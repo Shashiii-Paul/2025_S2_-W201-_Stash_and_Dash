@@ -11,18 +11,28 @@ public class DisplayHealthText : MonoBehaviour
 
     private void Start()
     {
-        _playerShoot = GetComponent<PlayerShoot>();
+        // Find PlayerShoot in parent or siblings
+        _playerShoot = GetComponentInParent<PlayerShoot>();
+        if (_playerShoot == null)
+        {
+            _playerShoot = transform.parent.GetComponentInChildren<PlayerShoot>();
+        }
+        if (_playerShoot == null)
+        {
+            Debug.LogError($"PlayerShoot component not found for {gameObject.name}!");
+        }
+        if (healthText == null)
+        {
+            Debug.LogError($"TextMeshPro component not assigned on {gameObject.name}!");
+        }
     }
 
     private void Update()
     {
-        if (_playerShoot.health <= 0)
-        {
-            healthText.text = "Dead";
-        }
-        else
-        {
-            healthText.text = _playerShoot.health.ToString();
-        }
+        if (_playerShoot == null || healthText == null) return;
+
+        int currentHealth = _playerShoot.health;
+        healthText.text = currentHealth <= 0 ? "Dead" : currentHealth.ToString();
+        Debug.Log($"HealthText Update for {gameObject.name}: health={currentHealth}, text={healthText.text}");
     }
 }

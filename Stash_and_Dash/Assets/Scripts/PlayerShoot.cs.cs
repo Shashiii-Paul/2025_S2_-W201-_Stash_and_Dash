@@ -163,24 +163,36 @@ public class PlayerShoot : AttributesSync
             Debug.LogError($"Visor or its Rigidbody not found in {avatar.gameObject.name}!");
         }
 
+        // Move HealthText to Body so it follows the ragdoll
+        Transform healthText = transform.parent.Find("HealthText");
+        if (healthText != null)
+        {
+            healthText.SetParent(body);
+            Debug.Log($"HealthText reparented to Body for {avatar.gameObject.name}");
+        }
+        else
+        {
+            Debug.LogWarning($"HealthText not found in {avatar.gameObject.name}'s hierarchy!");
+        }
+
         // Detach body from root so it can ragdoll independently
         body.SetParent(null);
         Debug.Log($"Body detached from {avatar.gameObject.name} for ragdoll");
 
-        // Ragdoll physics: Only enable on host to avoid desyncs
+        // Enable physics for ragdoll on all clients
+        bodyRb.isKinematic = false;
+        bodyRb.useGravity = true;
+        if (visorRb != null)
+        {
+            visorRb.isKinematic = false;
+            visorRb.useGravity = true;
+        }
+
+        // Host applies a small force for natural ragdoll
         if (multiplayer.Me.Index == 0)
         {
-            bodyRb.isKinematic = false;
-            bodyRb.useGravity = true;
             bodyRb.AddForce(Vector3.up * 2f + UnityEngine.Random.insideUnitSphere * 2f, ForceMode.Impulse);
-            Debug.Log($"Ragdoll physics enabled on host for {avatar.gameObject.name}");
-
-            if (visorRb != null)
-            {
-                visorRb.isKinematic = false;
-                visorRb.useGravity = true;
-                Debug.Log($"Visor physics enabled on host for {avatar.gameObject.name}");
-            }
+            Debug.Log($"Ragdoll physics force applied on host for {avatar.gameObject.name}");
         }
 
         // For local player: Enter spectator mode
@@ -208,7 +220,15 @@ public class PlayerShoot : AttributesSync
         }
 
         // Deactivate the root player object (hides any remaining non-ragdoll parts)
-        transform.parent.gameObject.SetActive(false);
-        Debug.Log($"Root player object {avatar.gameObject.name} deactivated");
+        // Keep PlayerShoot active by not deactivating the GameObject it's on
+        Transform rootPlayer = transform.parent;
+        foreach (Transform child in rootPlayer)
+        {
+            if (child != transform) // Skip PlayerShoot GameObject
+            {
+                child.gameObject.SetActive(false);
+            }
+        }
+        Debug.Log($"Root player children (except PlayerShoot) deactivated for {avatar.gameObject.name}");
     }
 }
