@@ -16,6 +16,13 @@ public class DisplayHealthText : MonoBehaviour
 
     private void Update()
     {
-        healthText.text = _playerShoot.health.ToString();
+        if (_playerShoot.health <= 0)
+        {
+            healthText.text = "Dead";
+        }
+        else
+        {
+            healthText.text = _playerShoot.health.ToString();
+        }
     }
 }
