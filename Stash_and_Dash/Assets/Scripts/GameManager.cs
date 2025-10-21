@@ -7,7 +7,7 @@ using System.Collections;
 public class GameManager : AttributesSync
 {
     [SynchronizableField] private bool[] readyStates; // Tracks ready state for each player
-    [SynchronizableField] private float gameStartTime = -1f; // Server time when game starts
+    [SynchronizableField] private float gameStartTimeOffset = -1f; // Host's Time.time when game starts
     [SynchronizableField] private bool gameEnded = false; // Tracks if game has ended
 
     private Multiplayer multiplayer;
@@ -15,6 +15,7 @@ public class GameManager : AttributesSync
     [SerializeField] private TextMeshProUGUI timerText; // UI for timer
     [SerializeField] private GameObject endgamePopup; // UI for endgame popup
     private int maxPlayers;
+    private float localGameStartTime; // Local time when game starts, adjusted for offset
 
     void Start()
     {
@@ -49,15 +50,17 @@ public class GameManager : AttributesSync
         if (multiplayer == null || !multiplayer.IsConnected) return;
 
         // Ready key input
-        if (Input.GetKeyDown(KeyCode.R) && !gameEnded && gameStartTime < 0)
+        if (Input.GetKeyDown(KeyCode.R) && !gameEnded && gameStartTimeOffset < 0)
         {
             SetReady();
         }
 
         // Update timer UI
-        if (gameStartTime >= 0 && !gameEnded)
+        if (gameStartTimeOffset >= 0 && !gameEnded)
         {
-            float timeRemaining = gameDuration - (Time.time - gameStartTime);
+            // Calculate time remaining using the synchronized offset
+            float timeSinceGameStart = Time.time - localGameStartTime;
+            float timeRemaining = gameDuration - timeSinceGameStart;
             if (timeRemaining <= 0)
             {
                 if (multiplayer.Me.Index == 0 && !gameEnded)
@@ -115,16 +118,19 @@ public class GameManager : AttributesSync
         }
 
         // All players are ready, start the game
-        gameStartTime = Time.time;
-        BroadcastRemoteMethod(nameof(StartGame), gameStartTime);
+        gameStartTimeOffset = Time.time;
+        localGameStartTime = Time.time; // Host sets local start time immediately
+        BroadcastRemoteMethod(nameof(StartGame), gameStartTimeOffset);
         Debug.Log("All players ready. Game started!");
     }
 
     [SynchronizableMethod]
-    private void StartGame(float startTime)
+    private void StartGame(float startTimeOffset)
     {
-        gameStartTime = startTime;
-        Debug.Log($"Game started at time {startTime}");
+        gameStartTimeOffset = startTimeOffset;
+        // Adjust local start time to account for network delay
+        localGameStartTime = Time.time - (Time.time - startTimeOffset);
+        Debug.Log($"Game started with offset {startTimeOffset}, local start time {localGameStartTime}");
     }
 
     [SynchronizableMethod]
