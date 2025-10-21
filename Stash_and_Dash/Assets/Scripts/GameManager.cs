@@ -6,16 +6,15 @@ using System.Collections;
 
 public class GameManager : AttributesSync
 {
-    [SynchronizableField] private bool[] readyStates; // Tracks ready state for each player
     [SynchronizableField] private float gameStartTimeOffset = -1f; // Host's Time.time when game starts
     [SynchronizableField] private bool gameEnded = false; // Tracks if game has ended
+    [SynchronizableField] private float syncedRemainingTime = -1f; // Synced remaining time for UI
 
     private Multiplayer multiplayer;
     private float gameDuration = 120f; // 2 minutes in seconds
     [SerializeField] private TextMeshProUGUI timerText; // UI for timer
     [SerializeField] private GameObject endgamePopup; // UI for endgame popup
-    private int maxPlayers;
-    private float localGameStartTime; // Local time when game starts, adjusted for offset
+    private float localGameStartTime; // Local time when game starts (used only by host)
 
     void Start()
     {
@@ -26,117 +25,62 @@ public class GameManager : AttributesSync
             return;
         }
 
-        // Initialize ready states based on max players in the room
-        maxPlayers = multiplayer.CurrentRoom != null ? multiplayer.CurrentRoom.MaxUsers : 8; // Default to 8 if no room
-        readyStates = new bool[maxPlayers];
-        for (int i = 0; i < maxPlayers; i++)
-        {
-            readyStates[i] = false;
-        }
-
         // Hide endgame popup initially
         if (endgamePopup != null)
         {
             endgamePopup.SetActive(false);
         }
-
-        // Register to room join/leave events
-        multiplayer.OnRoomJoined.AddListener(OnRoomJoined);
-        multiplayer.OnOtherUserLeft.AddListener(OnUserLeft);
     }
 
     void Update()
     {
         if (multiplayer == null || !multiplayer.IsConnected) return;
 
-        // Ready key input
-        if (Input.GetKeyDown(KeyCode.R) && !gameEnded && gameStartTimeOffset < 0)
+        // Host starts the game with R key
+        if (Input.GetKeyDown(KeyCode.R) && multiplayer.Me.Index == 0 && !gameEnded && gameStartTimeOffset < 0)
         {
-            SetReady();
+            StartTheGame();
         }
 
-        // Update timer UI
+        // Update timer UI if game has started
         if (gameStartTimeOffset >= 0 && !gameEnded)
         {
-            // Calculate time remaining using the synchronized offset
-            float timeSinceGameStart = Time.time - localGameStartTime;
-            float timeRemaining = gameDuration - timeSinceGameStart;
-            if (timeRemaining <= 0)
+            UpdateTimerUI(syncedRemainingTime);
+
+            // Host checks for endgame (backup check in case coroutine misses)
+            if (multiplayer.Me.Index == 0 && syncedRemainingTime <= 0 && !gameEnded)
             {
-                if (multiplayer.Me.Index == 0 && !gameEnded)
-                {
-                    // Host triggers endgame
-                    gameEnded = true;
-                    BroadcastRemoteMethod(nameof(EndGame));
-                }
-                timeRemaining = 0;
-            }
-            UpdateTimerUI(timeRemaining);
-        }
-    }
-
-    public void SetReady()
-    {
-        if (multiplayer == null || !multiplayer.IsConnected) return;
-
-        int userIndex = multiplayer.Me.Index;
-        if (userIndex >= 0 && userIndex < readyStates.Length)
-        {
-            readyStates[userIndex] = true;
-            BroadcastRemoteMethod(nameof(SyncReadyState), userIndex, true);
-            Debug.Log($"Player {multiplayer.Me.Name} is ready.");
-
-            // Host checks if all players are ready
-            if (multiplayer.Me.Index == 0)
-            {
-                CheckAllReady();
+                gameEnded = true;
+                BroadcastRemoteMethod(nameof(EndGame));
             }
         }
     }
 
-    [SynchronizableMethod]
-    private void SyncReadyState(int userIndex, bool isReady)
-    {
-        if (userIndex >= 0 && userIndex < readyStates.Length)
-        {
-            readyStates[userIndex] = isReady;
-            Debug.Log($"Player index {userIndex} ready state updated to {isReady}");
-        }
-    }
-
-    private void CheckAllReady()
+    private void StartTheGame()
     {
         if (multiplayer.Me.Index != 0) return;
 
-        int connectedUsers = multiplayer.CurrentRoom != null ? multiplayer.CurrentRoom.GetUserCount() : 1;
-        for (int i = 0; i < connectedUsers; i++)
-        {
-            if (!readyStates[i])
-            {
-                return; // Not all players are ready
-            }
-        }
-
-        // All players are ready, start the game
         gameStartTimeOffset = Time.time;
-        localGameStartTime = Time.time; // Host sets local start time immediately
-        BroadcastRemoteMethod(nameof(StartGame), gameStartTimeOffset);
-        Debug.Log("All players ready. Game started!");
+        localGameStartTime = Time.time;
+        syncedRemainingTime = gameDuration;
+        Debug.Log("Hunter started the game!");
+        BroadcastRemoteMethod(nameof(StartGame));
+        StartCoroutine(SyncTimerCoroutine());
     }
 
     [SynchronizableMethod]
-    private void StartGame(float startTimeOffset)
+    private void StartGame()
     {
-        gameStartTimeOffset = startTimeOffset;
-        // Adjust local start time to account for network delay
-        localGameStartTime = Time.time - (Time.time - startTimeOffset);
-        Debug.Log($"Game started with offset {startTimeOffset}, local start time {localGameStartTime}");
+        // Clients start their local timer display with full duration initially
+        syncedRemainingTime = gameDuration;
+        Debug.Log("Game started for this client.");
     }
 
     [SynchronizableMethod]
     private void EndGame()
     {
         gameEnded = true;
+        syncedRemainingTime = 0f;
         if (endgamePopup != null)
         {
             endgamePopup.SetActive(true);
@@ -147,28 +91,21 @@ public class GameManager : AttributesSync
         StartCoroutine(CloseGameAfterDelay(5f));
     }
 
-    private void OnRoomJoined(Multiplayer mp, Room room, User user)
+    private IEnumerator SyncTimerCoroutine()
     {
-        // Reset ready state for new user
-        if (user == multiplayer.Me)
+        while (!gameEnded)
         {
-            int userIndex = user.Index;
-            if (userIndex >= 0 && userIndex < readyStates.Length)
-            {
-                readyStates[userIndex] = false;
-                BroadcastRemoteMethod(nameof(SyncReadyState), userIndex, false);
-            }
-        }
-    }
+            float timeSinceStart = Time.time - localGameStartTime;
+            syncedRemainingTime = Mathf.Max(0f, gameDuration - timeSinceStart);
 
-    private void OnUserLeft(Multiplayer mp, User user)
-    {
-        // Reset ready state for leaving user
-        int userIndex = user.Index;
-        if (userIndex >= 0 && userIndex < readyStates.Length)
-        {
-            readyStates[userIndex] = false;
-            BroadcastRemoteMethod(nameof(SyncReadyState), userIndex, false);
+            if (syncedRemainingTime <= 0 && !gameEnded)
+            {
+                gameEnded = true;
+                BroadcastRemoteMethod(nameof(EndGame));
+                yield break;
+            }
+
+            yield return new WaitForSeconds(0.5f); // Sync every 0.5 seconds to reduce network load
         }
     }
 
@@ -203,10 +140,10 @@ public class GameManager : AttributesSync
         }
 
         // Close the game
-        #if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
-        #else
-            Application.Quit();
-        #endif
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
     }
 }
