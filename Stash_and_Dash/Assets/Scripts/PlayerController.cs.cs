@@ -1,139 +1,167 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI; // Added for InputField reference
 
 public class PlayerController : MonoBehaviour
 {
-    [Header("Base setup")]
-    public float walkingSpeed = 7.5f;
-    public float runningSpeed = 11.5f;
-    public float jumpSpeed = 8.0f;
-    public float gravity = 20.0f;
-    public float lookSpeed = 2.0f;
-    public float lookXLimit = 45.0f;
+    // -------------------- CONFIGURABLE MOVEMENT SETTINGS --------------------//
 
-    CharacterController characterController;
-    Vector3 moveDirection = Vector3.zero;
-    float rotationX = 0;
+    // Walking speed of the player (units per second)
+    [Header("Base Setup")]
+    [SerializeField] private float WalkingSpeed = 7.5f;
 
-    [HideInInspector]
-    public bool canMove = true;
+    // Running speed of the player (units per second)
+    [SerializeField] private float RunningSpeed = 11.5f;
 
-    [SerializeField]
-    private float cameraYOffset = 0.4f;
-    private Camera playerCamera;
+    // Vertical speed applied when the player jumps
+    [SerializeField] private float JumpSpeed = 8.0f;
 
-    private Alteruna.Avatar _avatar;
+    // Downward acceleration applied when the player is in the air
+    [SerializeField] private float GravityForce = 20.0f;
 
-    // New: Reference to the chat InputField (we'll find it at runtime since UI is in scene)
-    private InputField chatInputField;
+    // Mouse look sensitivity
+    [SerializeField] private float LookSpeed = 2.0f;
 
-    // New: Track cursor state
-    private bool cursorLocked = true;
+    // Vertical rotation limit for the camera (in degrees)
+    [SerializeField] private float LookXLimit = 45.0f;
 
-    void Start()
+    // Vertical offset for positioning the camera above the player
+    [SerializeField] private float CameraYOffset = 0.4f;
+
+    // -------------------- PRIVATE COMPONENT REFERENCES --------------------//
+
+    private CharacterController _characterController;   // Handles movement and collisions
+    private Camera _playerCamera;                       // Player's camera
+    private Alteruna.Avatar _avatar;                    // Used to check if this player is the local one
+
+    // -------------------- MOVEMENT VARIABLES --------------------//
+
+    private Vector3 _moveDirection = Vector3.zero;      // Stores the current movement vector
+    private float _rotationX = 0f;                      // Tracks camera pitch rotation
+    [HideInInspector] public bool CanMove = true;       // Controls whether the player can move
+
+    // Called once at the start of the game
+    // Sets up all references and locks the mouse cursor
+    private void Start()
     {
         _avatar = GetComponent<Alteruna.Avatar>();
 
-        if (!_avatar.IsMe)
+        // Make sure this is the local player
+        if (_avatar == null || !_avatar.IsMe)
             return;
-        
-        characterController = GetComponent<CharacterController>();
-        playerCamera = Camera.main;
-        playerCamera.transform.position = new Vector3(transform.position.x, transform.position.y + cameraYOffset, transform.position.z);
-        playerCamera.transform.SetParent(transform);
 
-        // New: Find the chat InputField in the scene (assumes there's only one; adjust if needed)
-        chatInputField = FindObjectOfType<InputField>();
-        if (chatInputField == null)
+        // Get the CharacterController component
+        _characterController = GetComponent<CharacterController>();
+
+        // If missing, log a warning and disable this script
+        if (_characterController == null)
         {
-            Debug.LogError("PlayerController: Could not find InputField for chat! Make sure it's in the scene.");
+            Debug.LogWarning("CharacterController component missing on PlayerController object.");
+            enabled = false;
+            return;
         }
 
-        // Lock cursor initially
-        UpdateCursorState();
+        // Cache the main camera for performance
+        _playerCamera = Camera.main;
+
+        // Warn if there is no main camera in the scene
+        if (_playerCamera == null)
+        {
+            Debug.LogWarning("Main Camera not found in scene. Player view will not function.");
+            return;
+        }
+
+        // Position the camera above the player and make it follow
+        _playerCamera.transform.position = new Vector3(
+            transform.position.x,
+            transform.position.y + CameraYOffset,
+            transform.position.z
+        );
+        _playerCamera.transform.SetParent(transform);
+
+        // Lock and hide the cursor so mouse movement rotates the camera
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
-    void Update()
+    // Called once every frame
+    // Handles player movement and rotation
+    private void Update()
     {
-        if (!_avatar.IsMe)
+        // Only run for the local player
+        if (_avatar == null || !_avatar.IsMe)
             return;
-        
-        // New: Toggle cursor with Escape
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            cursorLocked = !cursorLocked;
-            UpdateCursorState();
-        }
 
-        // New: Press Enter to unlock (if locked) and focus chat input for typing
-        if (Input.GetKeyDown(KeyCode.Return))
-        {
-            if (cursorLocked)
-            {
-                cursorLocked = false;
-                UpdateCursorState();
-                if (chatInputField != null)
-                {
-                    chatInputField.Select();
-                    chatInputField.ActivateInputField();
-                }
-            }
-            // If already unlocked, do nothing—Enter will send the message if the input is focused
-        }
-        
-        bool isRunning = false;
+        // Stop if no CharacterController is attached
+        if (_characterController == null)
+            return;
 
-        isRunning = Input.GetKey(KeyCode.LeftShift);
+        HandleMovement();  // Process keyboard input and move the player
+        HandleRotation();  // Rotate the camera and player based on mouse movement
+    }
 
+    // Handles player walking, running, jumping, and gravity
+    private void HandleMovement()
+    {
+        // Check if Left Shift is being held down for running
+        bool isRunning = Input.GetKey(KeyCode.LeftShift);
+
+        // Get forward and right directions relative to the player's current facing
         Vector3 forward = transform.TransformDirection(Vector3.forward);
         Vector3 right = transform.TransformDirection(Vector3.right);
 
-        float curSpeedX = canMove ? (isRunning ? runningSpeed : walkingSpeed) * Input.GetAxis("Vertical") : 0;
-        float curSpeedY = canMove ? (isRunning ? runningSpeed : walkingSpeed) * Input.GetAxis("Horizontal") : 0;
-        float movementDirectionY = moveDirection.y;
-        moveDirection = (forward * curSpeedX) + (right * curSpeedY);
+        // Get input from Unity's Input system (WASD or arrow keys)
+        float forwardInput = Input.GetAxis("Vertical");
+        float sideInput = Input.GetAxis("Horizontal");
 
-        if (Input.GetButton("Jump") && canMove && characterController.isGrounded)
+        // Determine speeds for both directions depending on whether the player is running
+        float currentForwardSpeed = CanMove ? (isRunning ? RunningSpeed : WalkingSpeed) * forwardInput : 0;
+        float currentSideSpeed = CanMove ? (isRunning ? RunningSpeed : WalkingSpeed) * sideInput : 0;
+
+        // Store the Y value before applying jump or gravity (so it carries over properly)
+        float previousY = _moveDirection.y;
+
+        // Combine forward and sideways movement
+        _moveDirection = (forward * currentForwardSpeed) + (right * currentSideSpeed);
+
+        // Jump logic — only works when grounded
+        if (CanMove && _characterController.isGrounded && Input.GetButton("Jump"))
         {
-            moveDirection.y = jumpSpeed;
+            _moveDirection.y = JumpSpeed;
         }
         else
         {
-            moveDirection.y = movementDirectionY;
+            // Keep existing Y value (e.g. for falling)
+            _moveDirection.y = previousY;
         }
 
-        if (!characterController.isGrounded)
+        // Apply gravity if the player is not grounded
+        if (!_characterController.isGrounded)
         {
-            moveDirection.y -= gravity * Time.deltaTime;
+            _moveDirection.y -= GravityForce * Time.deltaTime;
         }
 
-        characterController.Move(moveDirection * Time.deltaTime);
-
-        if (canMove && playerCamera != null)
-        {
-            rotationX += -Input.GetAxis("Mouse Y") * lookSpeed;
-            rotationX = Mathf.Clamp(rotationX, -lookXLimit, lookXLimit);
-            playerCamera.transform.localRotation = Quaternion.Euler(rotationX, 0, 0);
-            transform.rotation *= Quaternion.Euler(0, Input.GetAxis("Mouse X") * lookSpeed, 0);
-        }
+        // Move the player based on calculated direction and speed
+        _characterController.Move(_moveDirection * Time.deltaTime);
     }
 
-    // New: Helper to update cursor and movement state
-    private void UpdateCursorState()
+    // Handles rotation of both the player and the camera
+    private void HandleRotation()
     {
-        if (cursorLocked)
-        {
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
-            canMove = true;
-        }
-        else
-        {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-            canMove = false;
-        }
+        // If movement is disabled or no camera found, skip rotation
+        if (!CanMove || _playerCamera == null)
+            return;
+
+        // Vertical rotation (looking up and down)
+        _rotationX += -Input.GetAxis("Mouse Y") * LookSpeed;
+
+        // Clamp the rotation so the camera doesn’t flip over
+        _rotationX = Mathf.Clamp(_rotationX, -LookXLimit, LookXLimit);
+
+        // Apply vertical rotation to the camera
+        _playerCamera.transform.localRotation = Quaternion.Euler(_rotationX, 0, 0);
+
+        // Horizontal rotation (turning left and right)
+        transform.rotation *= Quaternion.Euler(0, Input.GetAxis("Mouse X") * LookSpeed, 0);
     }
 }
