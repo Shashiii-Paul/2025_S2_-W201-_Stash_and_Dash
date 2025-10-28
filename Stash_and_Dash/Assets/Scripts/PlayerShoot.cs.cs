@@ -6,7 +6,6 @@ using Alteruna;
 
 public class PlayerShoot : AttributesSync
 {
-    // -------------------- CONSTANTS -------------------- //
     // Default health value for all players
     private const int DefaultHealth = 100;
     // Default damage applied when shooting
@@ -14,11 +13,9 @@ public class PlayerShoot : AttributesSync
     // Force applied to ragdoll for natural effect
     private const float RagdollForce = 2f;
 
-    // -------------------- SYNCHRONIZED FIELDS -------------------- //
     // Player health synchronized across network
     [SynchronizableField] public int health = DefaultHealth;
 
-    // -------------------- CONFIGURABLE FIELDS -------------------- //
     // Damage this player deals
     [SerializeField] private int damage = DefaultDamage;
     // Layer mask to identify targetable players
@@ -26,19 +23,16 @@ public class PlayerShoot : AttributesSync
     // Layer assigned to the local player
     [SerializeField] private int playerSelfLayer;
 
-    // -------------------- REFERENCES -------------------- //
     // Reference to the player's Alteruna avatar
     public Alteruna.Avatar avatar;
     // Reference to multiplayer manager in scene
     private Multiplayer multiplayer;
 
-    // -------------------- STATE TRACKERS -------------------- //
     // True if this player is the Hunter
     private bool isHunter;
     // Tracks if this player has died to prevent further actions
     private bool isDead = false;
 
-    // -------------------- UNITY METHODS -------------------- //
 
     private void Start()
     {
@@ -88,7 +82,6 @@ public class PlayerShoot : AttributesSync
             Shoot();
     }
 
-    // -------------------- CUSTOM METHODS -------------------- //
 
     // Recursively sets the layer of a GameObject and all its children
     private void SetLayerRecursively(GameObject obj, int newLayer)
@@ -178,7 +171,6 @@ public class PlayerShoot : AttributesSync
         DeactivateRootChildren();
     }
 
-    // -------------------- HELPER METHODS -------------------- //
 
     // Returns true if this player is the local Hunter
     private bool IsLocalHunter()
