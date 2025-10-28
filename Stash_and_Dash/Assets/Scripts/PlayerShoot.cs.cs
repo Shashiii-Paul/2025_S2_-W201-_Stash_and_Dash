@@ -6,19 +6,43 @@ using Alteruna;
 
 public class PlayerShoot : AttributesSync
 {
-    [SynchronizableField] public int health = 100;
-    [SerializeField] private int damage = 10;
-    public Alteruna.Avatar avatar;
+    // -------------------- CONSTANTS -------------------- //
+    // Default health value for all players
+    private const int DefaultHealth = 100;
+    // Default damage applied when shooting
+    private const int DefaultDamage = 10;
+    // Force applied to ragdoll for natural effect
+    private const float RagdollForce = 2f;
 
+    // -------------------- SYNCHRONIZED FIELDS -------------------- //
+    // Player health synchronized across network
+    [SynchronizableField] public int health = DefaultHealth;
+
+    // -------------------- CONFIGURABLE FIELDS -------------------- //
+    // Damage this player deals
+    [SerializeField] private int damage = DefaultDamage;
+    // Layer mask to identify targetable players
     [SerializeField] private LayerMask playerLayer;
+    // Layer assigned to the local player
     [SerializeField] private int playerSelfLayer;
 
-    private bool isHunter;
+    // -------------------- REFERENCES -------------------- //
+    // Reference to the player's Alteruna avatar
+    public Alteruna.Avatar avatar;
+    // Reference to multiplayer manager in scene
     private Multiplayer multiplayer;
-    private bool isDead = false; // Track death state to prevent further input
+
+    // -------------------- STATE TRACKERS -------------------- //
+    // True if this player is the Hunter
+    private bool isHunter;
+    // Tracks if this player has died to prevent further actions
+    private bool isDead = false;
+
+    // -------------------- UNITY METHODS -------------------- //
 
     private void Start()
     {
+        // Find Multiplayer component in scene
         multiplayer = FindObjectOfType<Multiplayer>();
         if (multiplayer == null)
         {
@@ -26,19 +50,15 @@ public class PlayerShoot : AttributesSync
             return;
         }
 
-        // Determine if this player is the Hunter (local only for shooting)
+        // Determine if this player is the Hunter (local player only)
         isHunter = avatar.IsMe && avatar.Multiplayer.Me.Index == 0;
 
-        // Set layer recursively on the entire avatar (root)
+        // Set layers recursively for this avatar and all children
         int targetLayer = avatar.IsMe ? playerSelfLayer : LayerMask.NameToLayer("Player");
         SetLayerRecursively(avatar.gameObject, targetLayer);
 
-        // Determine if this instance is for the Hunter player (based on possessor index)
-        int playerIndex = avatar.Possessor.Index;
-        bool isThisHunter = playerIndex == 0;
-
-        // Ensure Body and Visor are set up correctly only for Hunted players
-        if (!isThisHunter)
+        // For non-Hunter players, check Body and Visor exist and have Rigidbody
+        if (!IsLocalHunter())
         {
             Transform body = transform.parent.Find("Body");
             if (body == null)
@@ -58,6 +78,19 @@ public class PlayerShoot : AttributesSync
         }
     }
 
+    private void Update()
+    {
+        // Only allow the local Hunter to shoot and if not dead
+        if (!avatar.IsMe || !isHunter || isDead) return;
+
+        // Detect shooting input (left mouse button)
+        if (Input.GetKeyDown(KeyCode.Mouse0))
+            Shoot();
+    }
+
+    // -------------------- CUSTOM METHODS -------------------- //
+
+    // Recursively sets the layer of a GameObject and all its children
     private void SetLayerRecursively(GameObject obj, int newLayer)
     {
         obj.layer = newLayer;
@@ -67,28 +100,33 @@ public class PlayerShoot : AttributesSync
         }
     }
 
-    private void Update()
+    // Perform a raycast from the main camera to detect target players
+    private void Shoot()
     {
-        if (!avatar.IsMe || !isHunter || isDead) return; // Only Hunter can shoot, and only if not dead
+        // Check if Camera.main exists
+        Camera mainCam = Camera.main;
+        if (mainCam == null)
+        {
+            Debug.LogWarning("Camera.main not found. Cannot perform shooting.");
+            return;
+        }
 
-        if (Input.GetKeyDown(KeyCode.Mouse0))
-            Shoot();
-    }
-
-    void Shoot()
-    {
-        if (Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out RaycastHit hit, Mathf.Infinity, playerLayer))
+        // Raycast forward from camera to detect target player
+        if (Physics.Raycast(mainCam.transform.position, mainCam.transform.forward,
+                            out RaycastHit hit, Mathf.Infinity, playerLayer))
         {
             Debug.Log("Raycast hit: " + hit.transform.name);
-            PlayerShoot playerShoot = hit.transform.root.GetComponentInChildren<PlayerShoot>();
-            if (playerShoot != null)
+
+            // Attempt to get PlayerShoot component on hit object
+            PlayerShoot target = hit.transform.root.GetComponentInChildren<PlayerShoot>();
+            if (target != null)
             {
-                Debug.Log($"Found PlayerShoot on: {playerShoot.gameObject.name} | IsMe: {playerShoot.avatar.IsMe}");
-                playerShoot.BroadcastRemoteMethod(nameof(Hit), damage);
+                // Broadcast damage to target over network
+                target.BroadcastRemoteMethod(nameof(Hit), damage);
             }
             else
             {
-                Debug.Log("No PlayerShoot component found on hit object");
+                Debug.LogWarning("No PlayerShoot component found on hit object");
             }
         }
         else
@@ -97,89 +135,87 @@ public class PlayerShoot : AttributesSync
         }
     }
 
+    // Called remotely to apply damage to this player
     [SynchronizableMethod]
     public void Hit(int damageTaken)
     {
-        int playerIndex = avatar.Possessor.Index;
-        bool isThisHunter = playerIndex == 0;
+        // Hunters cannot take damage
+        if (IsLocalHunter()) return;
 
-        if (isThisHunter) return; // Hunters cannot take damage or die
+        // Validate damage (prevent negative values)
+        damageTaken = Mathf.Max(0, damageTaken);
 
-        Debug.Log($"Hit called on: {avatar.gameObject.name} | Current health: {health} | Damage: {damageTaken} | IsMe: {avatar.IsMe}");
+        // Apply damage
         health -= damageTaken;
+
+        // If health drops below zero and player not dead, broadcast death
         if (health <= 0 && !isDead)
         {
             BroadcastRemoteMethod(nameof(Die));
         }
     }
 
+    // Called remotely to handle player death
     [SynchronizableMethod]
-    void Die()
+    private void Die()
     {
-        if (isDead) return; // Prevent re-running death logic
+        // If already dead or Hunter, do nothing
+        if (isDead || IsLocalHunter()) return;
 
-        int playerIndex = avatar.Possessor.Index;
-        bool isThisHunter = playerIndex == 0;
-
-        if (isThisHunter) return; // Hunters cannot die
-
+        // Mark as dead
         isDead = true;
-        Debug.Log($"Player Died: {avatar.gameObject.name} | IsMe: {avatar.IsMe}");
 
-        // Disable movement and controller on root
+        // Disable movement and player controls
+        DisableControllers();
+
+        // Enable ragdoll physics
+        EnableRagdoll();
+
+        // Switch local player to spectator camera
+        EnterSpectatorMode();
+
+        // Deactivate remaining player parts
+        DeactivateRootChildren();
+    }
+
+    // -------------------- HELPER METHODS -------------------- //
+
+    // Returns true if this player is the local Hunter
+    private bool IsLocalHunter()
+    {
+        return avatar.Possessor.Index == 0;
+    }
+
+    // Disable CharacterController and PlayerController on root
+    private void DisableControllers()
+    {
         CharacterController cc = transform.parent.GetComponent<CharacterController>();
-        if (cc != null)
-        {
-            cc.enabled = false;
-            Debug.Log($"CharacterController disabled on {avatar.gameObject.name}");
-        }
+        if (cc != null) cc.enabled = false;
 
         PlayerController pc = transform.parent.GetComponent<PlayerController>();
-        if (pc != null)
-        {
-            pc.enabled = false;
-            Debug.Log($"PlayerController disabled on {avatar.gameObject.name}");
-        }
+        if (pc != null) pc.enabled = false;
+    }
 
-        // Find body and visor from root
+    // Enable ragdoll physics for Body and Visor
+    private void EnableRagdoll()
+    {
         Transform body = transform.parent.Find("Body");
-        if (body == null)
-        {
-            Debug.LogError($"Body not found for ragdoll in {avatar.gameObject.name}!");
-            return;
-        }
+        if (body == null) { Debug.LogError("Body not found!"); return; }
 
         Rigidbody bodyRb = body.GetComponent<Rigidbody>();
-        if (bodyRb == null)
-        {
-            Debug.LogError($"Rigidbody not found on Body in {avatar.gameObject.name}!");
-            return;
-        }
+        if (bodyRb == null) { Debug.LogError("Body Rigidbody not found!"); return; }
 
         Transform visor = body.Find("Visor");
-        Rigidbody visorRb = visor != null ? visor.GetComponent<Rigidbody>() : null;
-        if (visor == null || visorRb == null)
-        {
-            Debug.LogError($"Visor or its Rigidbody not found in {avatar.gameObject.name}!");
-        }
+        Rigidbody visorRb = visor?.GetComponent<Rigidbody>();
 
-        // Move HealthText to Body so it follows the ragdoll
+        // Move HealthText to body so it follows ragdoll
         Transform healthText = transform.parent.Find("HealthText");
-        if (healthText != null)
-        {
-            healthText.SetParent(body);
-            Debug.Log($"HealthText reparented to Body for {avatar.gameObject.name}");
-        }
-        else
-        {
-            Debug.LogWarning($"HealthText not found in {avatar.gameObject.name}'s hierarchy!");
-        }
+        if (healthText != null) healthText.SetParent(body);
 
-        // Detach body from root so it can ragdoll independently
+        // Detach body from root to allow ragdoll movement
         body.SetParent(null);
-        Debug.Log($"Body detached from {avatar.gameObject.name} for ragdoll");
 
-        // Enable physics for ragdoll on all clients
+        // Enable physics
         bodyRb.isKinematic = false;
         bodyRb.useGravity = true;
         if (visorRb != null)
@@ -188,47 +224,39 @@ public class PlayerShoot : AttributesSync
             visorRb.useGravity = true;
         }
 
-        // Host applies a small force for natural ragdoll
+        // Apply force for natural ragdoll effect (host only)
         if (multiplayer.Me.Index == 0)
         {
-            bodyRb.AddForce(Vector3.up * 2f + UnityEngine.Random.insideUnitSphere * 2f, ForceMode.Impulse);
-            Debug.Log($"Ragdoll physics force applied on host for {avatar.gameObject.name}");
+            bodyRb.AddForce(Vector3.up * RagdollForce + UnityEngine.Random.insideUnitSphere * RagdollForce,
+                            ForceMode.Impulse);
         }
+    }
 
-        // For local player: Enter spectator mode
-        if (avatar.IsMe)
-        {
-            Camera cam = Camera.main;
-            if (cam != null)
-            {
-                cam.transform.SetParent(null);
-                SpectatorCamera specCam = cam.gameObject.GetComponent<SpectatorCamera>();
-                if (specCam == null)
-                {
-                    specCam = cam.gameObject.AddComponent<SpectatorCamera>();
-                    Debug.Log($"SpectatorCamera component added to {cam.gameObject.name}");
-                }
-                else
-                {
-                    Debug.Log($"SpectatorCamera already exists on {cam.gameObject.name}");
-                }
-            }
-            else
-            {
-                Debug.LogError("Camera.main not found for spectator mode!");
-            }
-        }
+    // Switch the local player camera to spectator mode
+    private void EnterSpectatorMode()
+    {
+        if (!avatar.IsMe) return;
 
-        // Deactivate the root player object (hides any remaining non-ragdoll parts)
-        // Keep PlayerShoot active by not deactivating the GameObject it's on
-        Transform rootPlayer = transform.parent;
-        foreach (Transform child in rootPlayer)
+        Camera cam = Camera.main;
+        if (cam == null) { Debug.LogWarning("Camera.main not found for spectator mode."); return; }
+
+        cam.transform.SetParent(null);
+
+        // Add SpectatorCamera component if not already present
+        SpectatorCamera specCam = cam.GetComponent<SpectatorCamera>();
+        if (specCam == null)
         {
-            if (child != transform) // Skip PlayerShoot GameObject
-            {
-                child.gameObject.SetActive(false);
-            }
+            cam.gameObject.AddComponent<SpectatorCamera>();
         }
-        Debug.Log($"Root player children (except PlayerShoot) deactivated for {avatar.gameObject.name}");
+    }
+
+    // Deactivate all children of the root player except this script
+    private void DeactivateRootChildren()
+    {
+        Transform root = transform.parent;
+        foreach (Transform child in root)
+        {
+            if (child != transform) child.gameObject.SetActive(false);
+        }
     }
 }
